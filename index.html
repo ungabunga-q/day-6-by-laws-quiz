@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Fun Society Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Calm & Friendly -->
+    <!-- Application Structure Plan: The application is designed as an interactive quiz or flashcard system. The 100 questions from the source have been consolidated into 4 main topics for a simpler user entry point. Clicking a topic starts a quiz for that specific section, presenting one question at a time. This structure was chosen to break down the large amount of information into manageable chunks, preventing overwhelm and facilitating focused learning, which is ideal for memorization and practice. The user flow is simple: select topic -> answer questions one-by-one -> complete topic -> choose another. -->
+    <!-- Visualization & Content Choices: The source material is a Q&A list. The best way to represent this interactively is a flashcard system. Goal: Learn & Memorize -> Presentation: One question at a time on a "card" -> Interaction: User clicks a button to reveal the answer, then another to proceed to the next question. This encourages active recall. A progress indicator helps the user track their position within a topic. Justification: This method directly converts the static quiz into an engaging learning tool, perfectly suited for the target audience. Library/Method: Vanilla JavaScript manages the quiz state, question display, and all interactions. HTML/Tailwind CSS is used for the responsive layout and styling. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #fdfbf5;
+        color: #4a4a4a;
+      }
+      .card {
+        background-color: white;
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transition: all 0.3s ease-in-out;
+      }
+      .topic-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.08);
+      }
+      .answer-hidden {
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.5s ease-out, opacity 0.3s ease-in-out;
+      }
+      .answer-visible {
+        max-height: 500px; /* Adjust as needed */
+        opacity: 1;
+        transition: max-height 0.7s ease-in, opacity 0.5s ease-in-out;
+      }
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+      }
+      .btn-primary {
+        background-color: #e57373; /* Muted Red */
+        color: white;
+      }
+      .btn-primary:hover {
+        background-color: #ef5350;
+      }
+      .btn-secondary {
+        background-color: #f0f0f0;
+        color: #4a4a4a;
+      }
+      .btn-secondary:hover {
+        background-color: #e0e0e0;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4">
+    <div class="w-full max-w-2xl mx-auto">
+      <!-- Topics Screen -->
+      <div id="topics-screen">
+        <div class="text-center mb-8">
+          <h1 class="text-4xl font-bold mb-2">Fun Society Quiz! 🥳</h1>
+          <p class="text-lg text-gray-600">
+            Let's practice together. Choose a topic to start!
+          </p>
+        </div>
+        <div
+          id="topics-container"
+          class="grid grid-cols-1 md:grid-cols-2 gap-4"
+        >
+          <!-- Topics will be dynamically inserted here -->
+        </div>
+      </div>
+
+      <!-- Quiz Screen (Initially Hidden) -->
+      <div id="quiz-screen" class="hidden">
+        <div class="card p-6 sm:p-10">
+          <div class="flex justify-between items-center mb-6">
+            <button id="back-to-topics-btn" class="btn btn-secondary text-sm">
+              &larr; Back to Topics
+            </button>
+            <p id="progress-text" class="text-sm font-medium text-gray-500"></p>
+          </div>
+
+          <h2 id="topic-title" class="text-2xl font-bold text-center mb-6"></h2>
+
+          <div class="mb-6">
+            <p id="question-text" class="text-xl leading-relaxed"></p>
+          </div>
+
+          <div
+            id="answer-container"
+            class="answer-hidden border-t border-gray-200 pt-4 mt-6"
+          >
+            <p
+              id="answer-text"
+              class="text-lg text-green-700 leading-relaxed"
+            ></p>
+          </div>
+
+          <div class="mt-8 text-center">
+            <button id="action-btn" class="btn btn-primary text-lg"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const quizData = [
+        // NEW TOPIC 1: Society Books & Daily Rules
+        {
+          topic: 1,
+          question:
+            'What are the names of the first two big member books we talked about?',
+          answer: 'The I-Register and the J-Register! ❤️',
+        },
+        {
+          topic: 1,
+          question:
+            'Before we started talking about the flat papers (Share Certificates), how many of these official books did we say we had covered?',
+          answer: "We had covered eight of them! Wow, that's a lot! 🤩",
+        },
+        {
+          topic: 1,
+          question:
+            "The main member list is the I-Register. If a member's name is at some number on that list, what is that number called?",
+          answer:
+            "It's their Registration Number. It’s like their special ID number in the society! 👍",
+        },
+        {
+          topic: 1,
+          question:
+            'When we write down a flat sale on the back of the flat paper, which book do we look at to get the details right?',
+          answer:
+            'We look at the Transfer Register (the book for flat sales). 📖',
+        },
+        {
+          topic: 1,
+          question:
+            "What's the main reason we keep a book with the names of all our committee members?",
+          answer:
+            'To remember who was on the team and when! It helps if we ever need to check an old decision. 🤔',
+        },
+        {
+          topic: 1,
+          question:
+            'If a new committee team thinks an old team did something wrong years ago, which book helps them see who was on the team back then?',
+          answer:
+            "The Register of Managing Committee Members. It's our society's history book for the committee! 🏛️",
+        },
+        {
+          topic: 1,
+          question:
+            'What do we call the book where we write down all the letters we receive? 📥',
+          answer: 'The Inward Register. "In" for incoming mail!',
+        },
+        {
+          topic: 1,
+          question:
+            'What are three types of letters from members that we should write down in this book?',
+          answer:
+            'Things like complaint letters, requests for an NOC (like for a passport), and nomination forms.',
+        },
+        {
+          topic: 1,
+          question:
+            'What are two types of letters from the government that we MUST write down?',
+          answer:
+            "Letters from the Registrar's office or notices from the Income Tax or GST departments. These are very important! ⚠️",
+        },
+        {
+          topic: 1,
+          question:
+            'In the "letters we got" book, whose name do we write as the sender?',
+          answer: 'The name of the member or person who sent the letter.',
+        },
+        {
+          topic: 1,
+          question:
+            'In that same book, whose name do we write as the person who received it?',
+          answer:
+            'The name of the person who took the letter for the society (like the manager or yourself!). 🤗',
+        },
+        {
+          topic: 1,
+          question: 'What are the two things we can do after we get a letter?',
+          answer:
+            "We can either file it for the next committee meeting OR, if it's urgent, take a photo and send it to the committee's chat group right away! 📸",
+        },
+        {
+          topic: 1,
+          question:
+            'What should we do *immediately* if we get a letter from any government office?',
+          answer:
+            "Take a photo and send it to the committee group! Don't wait!",
+        },
+        {
+          topic: 1,
+          question:
+            'What do we call the book where we write down all the letters we send out? 📤',
+          answer: 'The Outward Register. "Out" for outgoing mail!',
+        },
+        {
+          topic: 1,
+          question:
+            'Before we hand a letter to anyone from the society, what must we do first?',
+          answer:
+            'We must write it down in the Outward Register first! No exceptions!',
+        },
+        {
+          topic: 1,
+          question:
+            'In the "letters we sent" book, how do we note down how we sent it?',
+          answer: 'We write how we sent it, like "By Hand" or "By Post". 📬',
+        },
+        {
+          topic: 1,
+          question:
+            'If we send a letter by special registered post, what extra note should we add later?',
+          answer:
+            'We should track it and write down the date it was delivered! This is our proof. ✔️',
+        },
+        {
+          topic: 1,
+          question:
+            'Why is it so important to track the delivery date of important letters?',
+          answer:
+            "It's our proof that they got it! This is very helpful if there are deadlines.",
+        },
+        {
+          topic: 1,
+          question:
+            'Why are these two "In" and "Out" books so important when members complain?',
+          answer:
+            'They show exactly when a member asked for something and when we replied. It proves we are doing our job! 💪',
+        },
+        {
+          topic: 1,
+          question:
+            'Can we just keep these "In" and "Out" books on a computer in Excel?',
+          answer:
+            "No, they must be real, physical books (hard copy). That's the rule!",
+        },
+        {
+          topic: 1,
+          question:
+            "What's the name of the book where we track all the cheques we get from members?",
+          answer: 'The Check Inward Register. cheques "coming in"!',
+        },
+        {
+          topic: 1,
+          question:
+            'In that book, if a member gives us a cheque on the 15th but the date on the cheque is the 25th, what date do we write down?',
+          answer: "We write the date that's on the cheque, so the 25th.",
+        },
+        {
+          topic: 1,
+          question:
+            'When should we take that cheque (dated the 25th) to the bank?',
+          answer: 'On or after the 25th. Not before! 😊',
+        },
+        {
+          topic: 1,
+          question:
+            'What would happen if we put the cheque in the bank before the date written on it?',
+          answer: "The cheque would bounce! We don't want that.",
+        },
+        {
+          topic: 1,
+          question:
+            "If a member gives a cheque dated after the bill's due date, which date do we use to see if they are late?",
+          answer:
+            'We use the date on the cheque. So if that date is after the due date, they have to pay a late fee.',
+        },
+        {
+          topic: 1,
+          question: 'Can this cheque book be kept on a computer in Excel?',
+          answer: 'Yes, this one can be in Excel or a real book. Your choice!',
+        },
+        {
+          topic: 1,
+          question:
+            "What's the name of the book where we track all the cheques we give out to people (like plumbers or electricians)?",
+          answer: 'The Check Outward Register. cheques "going out"!',
+        },
+        {
+          topic: 1,
+          question:
+            'In that book, what should we get from the person who is collecting the cheque from us?',
+          answer:
+            'We should get their Name and Signature. It’s proof they took it! ✍️',
+        },
+        {
+          topic: 1,
+          question:
+            'In the cheque book for money we receive, what two dates from the bill do we write down?',
+          answer:
+            'We write the bill date (when it was made) and the due date (when it should be paid by).',
+        },
+        {
+          topic: 1,
+          question:
+            'When a bill is due on the 20th, but a member gives a cheque on the 15th that is dated for the 25th, have they paid on time?',
+          answer:
+            'No, because the cheque can only be used on the 25th, which is after the due date. They might have to pay a late fee! 😮',
+        },
+        {
+          topic: 1,
+          question:
+            'What is the most important paper that shows the society is official and has its address on it?',
+          answer:
+            "The Society Registration Certificate! It's like the society's birth certificate! 📜",
+        },
+        {
+          topic: 1,
+          question:
+            "What should we do if we give a cheque to a vendor (like a painter) and they don't put it in the bank after a week?",
+          answer:
+            'We should give them a friendly call and remind them to deposit the cheque soon! 📞',
+        },
+
+        // NEW TOPIC 2: Members, Shares & Flat Papers
+        {
+          topic: 2,
+          question:
+            "On our flat paper, what are the two main parts it's made of?",
+          answer:
+            'The left side (which stays in the book) and the right side (which is given to the member).',
+        },
+        {
+          topic: 2,
+          question:
+            'Which part of the flat paper do we give to the member to keep?',
+          answer: 'The main part on the right. ✨',
+        },
+        {
+          topic: 2,
+          question: 'Which part stays in the big book?',
+          answer: 'The counterfoil on the left.',
+        },
+        {
+          topic: 2,
+          question: 'About how many of these flat papers are in one big book?',
+          answer: 'Usually about 50.',
+        },
+        {
+          topic: 2,
+          question:
+            'If a member is at number 10 on the main member list (I-Register), what number will be on their flat paper?',
+          answer: 'It will also be number 10! They always match. 👍',
+        },
+        {
+          topic: 2,
+          question:
+            'If a member (Jayanta) is at number 10, what is his Registration Number?',
+          answer: 'His Registration Number is 10.',
+        },
+        {
+          topic: 2,
+          question:
+            'How many shares did we say Jayanta was given in our example?',
+          answer: 'He was given 10 shares.',
+        },
+        {
+          topic: 2,
+          question:
+            'In our example, what was the total value of all the shares the society is allowed to have?',
+          answer: 'It was One Lakh Rupees (₹1,00,000).',
+        },
+        {
+          topic: 2,
+          question: 'What was the name of the society in our example?',
+          answer: 'Om Sai Plaza.',
+        },
+        {
+          topic: 2,
+          question:
+            'Where can a society find its official registered address to write on the flat paper?',
+          answer: "On the society's main Registration Certificate.",
+        },
+        {
+          topic: 2,
+          question: 'What was the registration date for our example society?',
+          answer: 'January 1st, 2018 (01/01/2018).',
+        },
+        {
+          topic: 2,
+          question:
+            'For Jayanta, who has 10 shares, what numbers do we write for his block of shares?',
+          answer: 'We write from 111 to 120. (This is just an example).',
+        },
+        {
+          topic: 2,
+          question:
+            "What city did we use as an example for the society's location?",
+          answer: 'Thane West.',
+        },
+        {
+          topic: 2,
+          question:
+            'What is the special type of seal we MUST use on the flat paper?',
+          answer:
+            'The embossed "Common Seal". The one that makes a raised mark! ✨',
+        },
+        {
+          topic: 2,
+          question:
+            'What is the *correct* way to put this special seal on the paper?',
+          answer:
+            'We use a special machine to press it onto a sticker, making a raised mark, and then stick it on the paper.',
+        },
+        {
+          topic: 2,
+          question: 'What is the *wrong* way some people put a seal on?',
+          answer:
+            "Just using a normal round ink stamp. That's a no-no for this! 🚫",
+        },
+        {
+          topic: 2,
+          question: 'What words are usually on this special embossed seal?',
+          answer:
+            "The society's name on the outside and the registration number on the inside.",
+        },
+        {
+          topic: 2,
+          question:
+            'What color stickers are usually used for this special seal?',
+          answer: 'Usually red stickers. They look nice and official!',
+        },
+        {
+          topic: 2,
+          question:
+            'What happens if an auditor sees a normal ink stamp instead of the special embossed seal?',
+          answer:
+            "The auditor will say it's wrong and we have to do it again properly.",
+        },
+        {
+          topic: 2,
+          question:
+            'What is the word for writing on the back of the flat paper when a home is sold?',
+          answer:
+            'It\'s called an "Endorsement". A fancy word for making a note!',
+        },
+        {
+          topic: 2,
+          question:
+            'When someone sells their flat, do we give the new owner a brand new flat paper?',
+          answer:
+            'No, we just make a note (endorse) on the back of the original one.',
+        },
+        {
+          topic: 2,
+          question:
+            'In our example, when Jayanta sold his flat to Sushila, what was the date of the sale?',
+          answer: 'March 31st, 2018 (31/03/2018).',
+        },
+        {
+          topic: 2,
+          question:
+            'If this was the very first flat sale in the society, what would the Transfer Number be?',
+          answer: 'It would be Number 1! 🥇',
+        },
+        {
+          topic: 2,
+          question:
+            'In a sale, what do we call the person who is *selling* the flat?',
+          answer: 'The Transferor.',
+        },
+        {
+          topic: 2,
+          question: 'In our example, who was the seller?',
+          answer: 'Jayanta Day.',
+        },
+        {
+          topic: 2,
+          question: "What was the seller Jayanta's registration number?",
+          answer: 'It was 10.',
+        },
+        {
+          topic: 2,
+          question: 'In our example, who was the person *buying* the flat?',
+          answer: 'Sushila Day.',
+        },
+        {
+          topic: 2,
+          question: "What was the buyer Sushila's new registration number?",
+          answer: 'Her new number was 16.',
+        },
+        {
+          topic: 2,
+          question:
+            "Is there any place on the flat paper where it's okay to use a normal round ink stamp?",
+          answer:
+            'Yes, on the back where we write the sale details (the endorsement), there is a spot where a round stamp is okay.',
+        },
+        {
+          topic: 2,
+          question:
+            'What decides the total value of shares a society can have?',
+          answer: "The society's own rule book, the bylaws.",
+        },
+        {
+          topic: 2,
+          question: 'Where in the rule book does it say this?',
+          answer: 'Usually under bylaw number 10 or 8.',
+        },
+        {
+          topic: 2,
+          question:
+            'In our example, if the total share value is ₹1,00,000, what did we say was the price of one single share?',
+          answer: 'We said it was ₹50 per share.',
+        },
+        {
+          topic: 2,
+          question:
+            "With a total of ₹1,00,000 and each share being ₹50, what's the maximum number of shares our example society can ever give out?",
+          answer: '2000 shares. (1,00,000 divided by 50)',
+        },
+        {
+          topic: 2,
+          question:
+            'If our example society has 100 members and gives 10 shares to each person, how many shares have been given out?',
+          answer: '1000 shares in total. (100 members x 10 shares)',
+        },
+        {
+          topic: 2,
+          question:
+            'If we can give out 2000 shares but we have only given out 1000, how many shares do we have left?',
+          answer: 'We have 1000 shares left in the bank!',
+        },
+        {
+          topic: 2,
+          question:
+            'Why is it a good idea for a society to always have extra shares available?',
+          answer:
+            'So we have shares ready for any new members who join later! 😊',
+        },
+        {
+          topic: 2,
+          question:
+            'If a person sells their flat to a big company, how many shares does that company usually need?',
+          answer: 'The company usually needs 20 shares.',
+        },
+        {
+          topic: 2,
+          question:
+            'When new members join, like in a brand new building, how many shares does each new member get?',
+          answer: 'Each new member gets 10 shares.',
+        },
+        {
+          topic: 2,
+          question:
+            "On the society's big financial report (Balance Sheet), where do we write the total value of shares the society *can* have?",
+          answer: 'Under the "Share Capital" section.',
+        },
+        {
+          topic: 2,
+          question:
+            'Where do we write the value of the shares we have *actually* sold to members?',
+          answer:
+            'Under the "Paid-Up Share Capital" section. This is the money we actually have!',
+        },
+
+        // NEW TOPIC 3: The Committee & Meetings
+        {
+          topic: 3,
+          question:
+            'When a society is brand new, what do we call the very first committee team?',
+          answer:
+            'The provisional or nominated committee. They are the startup team!',
+        },
+        {
+          topic: 3,
+          question:
+            'How long does this very first "startup" committee work for?',
+          answer: 'Just for one year.',
+        },
+        {
+          topic: 3,
+          question:
+            'In our example, what year did the first committee team serve?',
+          answer: 'The year 2018-19.',
+        },
+        {
+          topic: 3,
+          question:
+            'Who is the person that calls the very first big meeting for all members?',
+          answer:
+            'The Chief Promoter (the main person who started the society).',
+        },
+        {
+          topic: 3,
+          question:
+            'How soon after the society is officially created must this first big meeting happen?',
+          answer: 'Within three months.',
+        },
+        {
+          topic: 3,
+          question:
+            'At this first big meeting, is the first committee chosen by voting or are they just selected?',
+          answer: 'They are selected or nominated, not voted for yet.',
+        },
+        {
+          topic: 3,
+          question:
+            'After this first special committee, how must all future committees be chosen?',
+          answer: 'By a proper election, where everyone votes! 🗳️',
+        },
+        {
+          topic: 3,
+          question:
+            'How often must the society have these big elections for the committee?',
+          answer: 'Every five years.',
+        },
+        {
+          topic: 3,
+          question:
+            'What happens if a committee is not chosen by a proper election and someone complains?',
+          answer:
+            'That committee can be dismissed and called illegal. The members on it might not be allowed to stand for election for 5 years!',
+        },
+        {
+          topic: 3,
+          question:
+            'In our example, how did our member Jayanta leave the committee?',
+          answer: 'He sadly passed away (Death of Member).',
+        },
+        {
+          topic: 3,
+          question:
+            'When a spot on the committee becomes empty (like from a death or someone moving), what should the committee do right away?',
+          answer:
+            'They must tell all the members that a spot is open and ask if anyone wants to join. 🤗',
+        },
+        {
+          topic: 3,
+          question:
+            'If there is one empty spot and only one person wants to join, do we need to have a big election?',
+          answer:
+            "No, if there's only one person for one spot, they can join the team without an election. Easy!",
+        },
+        {
+          topic: 3,
+          question:
+            'But what if there is one empty spot and *two* people want to join?',
+          answer:
+            'Then we must have an election to be fair and let the members choose.',
+        },
+        {
+          topic: 3,
+          question:
+            'When a committee finishes its 5 years, what note do we write in the register book?',
+          answer: '"Expiry of Tenor" (which means their time is up!).',
+        },
+        {
+          topic: 3,
+          question:
+            'If an old committee decided to rebuild the building, can the new committee just cancel that plan?',
+          answer:
+            "No, because that big decision was made by all the members in a General Body meeting, not just the committee. The big meeting's decision is what counts!",
+        },
+        {
+          topic: 3,
+          question:
+            'How many times a year do we have the big "Annual" meeting (AGM)?',
+          answer: 'Only once a year.',
+        },
+        {
+          topic: 3,
+          question:
+            'What is the other type of big meeting that we can have many times a year for urgent things?',
+          answer: 'A Special General Body Meeting.',
+        },
+
+        // NEW TOPIC 4: Tenants & Vendors
+        {
+          topic: 4,
+          question:
+            'What is the main reason for keeping a list of all tenants in the building?',
+          answer:
+            'To make sure everyone living here is official and has a proper agreement. Safety first! 👮',
+        },
+        {
+          topic: 4,
+          question:
+            'Should a person ever live in a society flat as a tenant without an agreement?',
+          answer: 'No, never!',
+        },
+        {
+          topic: 4,
+          question:
+            "What can the society do if an owner doesn't make a new rental agreement for their tenant?",
+          answer: 'The society can complain to the police.',
+        },
+        {
+          topic: 4,
+          question: 'Can we keep this list of tenants on a computer in Excel?',
+          answer: 'Yes, this list can be in Excel.',
+        },
+        {
+          topic: 4,
+          question: 'In the tenant list, why do we set a "Reminder Date"?',
+          answer:
+            'To remind the owner one month before the agreement is going to expire. So helpful! 🔔',
+        },
+        {
+          topic: 4,
+          question: 'How should we send this reminder to the owner and tenant?',
+          answer: 'By email, sending it to the owner and copying the tenant.',
+        },
+        {
+          topic: 4,
+          question:
+            'When a tenant is finally moving out, what must the society get from the flat owner?',
+          answer:
+            'A definite email from the owner saying their tenant is leaving and giving permission for them to move their things.',
+        },
+        {
+          topic: 4,
+          question:
+            'What is the reason for keeping a list of all our contracts with vendors (like for the lift or water pump)?',
+          answer:
+            'To track when the contracts (AMCs) are expiring so we can renew them on time.',
+        },
+        {
+          topic: 4,
+          question: "What should we do before a vendor's contract expires?",
+          answer:
+            'We should ask the vendor for their new price (quotation) to continue the work.',
+        },
+        {
+          topic: 4,
+          question:
+            'When we are buying things (like new garbage bins) and we get prices from three shops, should we always pick the cheapest one?',
+          answer:
+            'Not always! First, make sure all shops are offering the exact same quality and brand. Then you can pick the cheapest of the good ones.',
+        },
+        {
+          topic: 4,
+          question:
+            'When we are hiring for a service (like cleaning) and we get prices from three companies, should we always pick the cheapest one?',
+          answer:
+            'No, for services, the quality of the work is very important. We should check their reputation, even if they cost a little more. A good job is better than a cheap, bad job! 👍',
+        },
+      ];
+
+      const topicDetails = {
+        1: { name: 'Society Books & Daily Rules 📚', questions: [] },
+        2: { name: 'Members, Shares & Flat Papers 📜', questions: [] },
+        3: { name: 'The Committee & Meetings 🦸‍♀️', questions: [] },
+        4: { name: 'Tenants & Vendors 🙋‍♂️', questions: [] },
+      };
+
+      quizData.forEach((item) => {
+        if (topicDetails[item.topic]) {
+          topicDetails[item.topic].questions.push(item);
+        }
+      });
+
+      const topicsScreen = document.getElementById('topics-screen');
+      const quizScreen = document.getElementById('quiz-screen');
+      const topicsContainer = document.getElementById('topics-container');
+      const topicTitle = document.getElementById('topic-title');
+      const questionText = document.getElementById('question-text');
+      const answerContainer = document.getElementById('answer-container');
+      const answerText = document.getElementById('answer-text');
+      const actionBtn = document.getElementById('action-btn');
+      const progressText = document.getElementById('progress-text');
+      const backToTopicsBtn = document.getElementById('back-to-topics-btn');
+
+      let currentQuiz = [];
+      let currentQuestionIndex = 0;
+      let isAnswerVisible = false;
+      let isQuizOver = false;
+
+      function showTopicsScreen() {
+        quizScreen.classList.add('hidden');
+        topicsScreen.classList.remove('hidden');
+        window.scrollTo(0, 0);
+      }
+
+      function showQuizScreen() {
+        topicsScreen.classList.add('hidden');
+        quizScreen.classList.remove('hidden');
+        window.scrollTo(0, 0);
+      }
+
+      function displayQuestion() {
+        isAnswerVisible = false;
+        answerContainer.classList.add('answer-hidden');
+        answerContainer.classList.remove('answer-visible');
+
+        const questionData = currentQuiz[currentQuestionIndex];
+        questionText.innerHTML = questionData.question;
+        answerText.innerHTML = `<strong>Answer:</strong> ${questionData.answer}`;
+        progressText.textContent = `Question ${currentQuestionIndex + 1} of ${
+          currentQuiz.length
+        }`;
+        actionBtn.textContent = 'Show Answer';
+      }
+
+      function startQuiz(topicId) {
+        isQuizOver = false;
+        currentQuiz = topicDetails[topicId].questions;
+        currentQuestionIndex = 0;
+        topicTitle.textContent = topicDetails[topicId].name;
+        displayQuestion();
+        showQuizScreen();
+      }
+
+      actionBtn.addEventListener('click', () => {
+        if (isQuizOver) {
+          showTopicsScreen();
+          return;
+        }
+
+        if (isAnswerVisible) {
+          currentQuestionIndex++;
+          if (currentQuestionIndex < currentQuiz.length) {
+            displayQuestion();
+          } else {
+            isQuizOver = true;
+            questionText.textContent = 'You finished this topic! Great job! 🥳';
+            answerContainer.classList.add('answer-hidden');
+            answerContainer.classList.remove('answer-visible');
+            actionBtn.textContent = 'Try another topic';
+          }
+        } else {
+          isAnswerVisible = true;
+          answerContainer.classList.remove('answer-hidden');
+          answerContainer.classList.add('answer-visible');
+          actionBtn.textContent = 'Next Question';
+        }
+      });
+
+      backToTopicsBtn.addEventListener('click', showTopicsScreen);
+
+      function populateTopics() {
+        topicsContainer.innerHTML = ''; // Clear existing topics before populating
+        for (const topicId in topicDetails) {
+          const topic = topicDetails[topicId];
+          const button = document.createElement('button');
+          button.className = 'card topic-card text-left p-6';
+          button.innerHTML = `
+            <h3 class="text-xl font-bold mb-2">${topic.name}</h3>
+            <p class="text-gray-500">${topic.questions.length} questions</p>
+        `;
+          button.onclick = () => startQuiz(topicId);
+          topicsContainer.appendChild(button);
+        }
+      }
+
+      populateTopics();
+    </script>
+  </body>
+</html>
