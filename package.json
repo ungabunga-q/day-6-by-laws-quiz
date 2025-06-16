@@ -1,0 +1,15 @@
+{
+  "name": "fun-society-quiz-app",
+  "version": "1.0.0",
+  "description": "An interactive quiz app for society members.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No tests specified\""
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1" // Example dependency
+  }
+}
